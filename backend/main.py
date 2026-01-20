@@ -154,27 +154,38 @@ async def anki_decks():
 @app.post("/api/anki/import")
 async def anki_import(request: AnkiImportRequest):
     """Import vocabulary to Anki"""
-    result = add_notes_to_anki(
-        request.vocabulary,
-        deck_name=request.deck_name,
-        tags=request.tags
-    )
+    if not request.vocabulary:
+        raise HTTPException(status_code=400, detail="No vocabulary to import")
     
-    if result["success"]:
-        # Mark imported words as known
-        words_to_add = [item["word"] for item in request.vocabulary]
-        known_words = load_known_words(KNOWN_WORDS_PATH)
-        known_words.update(words_to_add)
-        save_known_words(known_words, KNOWN_WORDS_PATH)
+    try:
+        result = add_notes_to_anki(
+            request.vocabulary,
+            deck_name=request.deck_name,
+            tags=request.tags
+        )
         
-        return {
-            "success": True,
-            "added": result["added"],
-            "duplicates": result["duplicates"],
-            "total": result["total"]
-        }
-    
-    raise HTTPException(status_code=503, detail=result.get("error", "Failed to import"))
+        if result["success"]:
+            # Mark imported words as known
+            words_to_add = [item["word"] for item in request.vocabulary]
+            known_words = load_known_words(KNOWN_WORDS_PATH)
+            known_words.update(words_to_add)
+            save_known_words(known_words, KNOWN_WORDS_PATH)
+            
+            return {
+                "success": True,
+                "added": result["added"],
+                "duplicates": result["duplicates"],
+                "total": result["total"]
+            }
+        
+        # Handle Anki-specific errors
+        error_msg = result.get("error", "Failed to import to Anki")
+        raise HTTPException(status_code=503, detail=error_msg)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Anki import error: {str(e)}")
 
 
 if __name__ == "__main__":

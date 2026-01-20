@@ -159,7 +159,15 @@ function App() {
         })
       })
       const data = await res.json()
-      showToast(`Added ${data.added} cards to Anki!`, 'success')
+
+      // Check if the response indicates an error
+      if (!res.ok) {
+        const errorMsg = data.detail || data.error || 'Failed to import to Anki'
+        showToast(errorMsg, 'error')
+        return
+      }
+
+      showToast(`Added ${data.added || 0} cards to Anki!`, 'success')
       if (data.duplicates > 0) {
         showToast(`${data.duplicates} duplicates skipped`, 'info')
       }
@@ -167,7 +175,7 @@ function App() {
       setSelectedWords(new Set())
       fetchStats()
     } catch (error) {
-      showToast('Failed to import to Anki', 'error')
+      showToast('Failed to import to Anki. Check if Anki is running.', 'error')
     } finally {
       setLoading(false)
     }

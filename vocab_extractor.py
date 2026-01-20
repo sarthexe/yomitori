@@ -295,7 +295,12 @@ def add_notes_to_anki(vocabulary: list, deck_name: str = "Japanese Vocabulary", 
             "tags": tags,
             "options": {
                 "allowDuplicate": False,
-                "duplicateScope": "deck"
+                "duplicateScope": "deck",
+                "duplicateScopeOptions": {
+                    "deckName": deck_name,
+                    "checkChildren": False,
+                    "checkAllModels": False
+                }
             }
         })
     
